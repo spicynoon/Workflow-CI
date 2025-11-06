@@ -68,10 +68,15 @@ jobs:
 
       - name: Generate Dockerfile from MLflow model
         if: ${{ steps.fetchrun.outputs.model_dir != '' }}
+        id: gendock
         working-directory: MLProject
         run: |
+          set -e
+          OUT_DIR="mlflow-dockerfile"
+          rm -rf "$OUT_DIR"
           mlflow models generate-dockerfile -m "${{ steps.fetchrun.outputs.model_dir }}"
-          test -f Dockerfile || { echo "Dockerfile tidak terbentuk"; exit 1; }
+          test -f "$OUT_DIR/Dockerfile" || { echo "Dockerfile tidak ditemukan di $OUT_DIR"; ls -la "$OUT_DIR"; exit 1; }
+          echo "out_dir=$OUT_DIR" >> "$GITHUB_OUTPUT"
 
       - name: Docker login
         if: ${{ steps.fetchrun.outputs.model_dir != '' }}
@@ -84,7 +89,10 @@ jobs:
         env:
           IMAGE_BASE: ${{ secrets.DOCKERHUB_USERNAME }}/adult_income
         run: |
-          docker build -t "$IMAGE_BASE:latest" .
+          docker build -t "$IMAGE_BASE:latest" \
+            -f "${{ steps.gendock.outputs.out_dir }}/Dockerfile" \
+            "${{ steps.gendock.outputs.out_dir }}"
+
 
       - name: Tag Docker image (run_id)
         if: ${{ steps.fetchrun.outputs.model_dir != '' }}
