@@ -1,0 +1,66 @@
+name: Train & Dockerize (MLflow Project)
+
+on:
+  push:
+    paths:
+      - "MLProject/**"
+      - ".github/workflows/ci.yml"
+  workflow_dispatch:
+
+jobs:
+  train_and_docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install MLflow (CLI) & deps
+        run: |
+          pip install --upgrade pip
+          pip install mlflow==2.19.0 numpy pandas scikit-learn joblib matplotlib
+
+      - name: Run MLflow Project
+        working-directory: MLProject
+        run: |
+          mlflow run . -e main
+
+      - name: Collect model artifact path
+        id: modelpath
+        working-directory: MLProject
+        shell: bash
+        run: |
+          MODEL_DIR=$(find mlruns -type d -path "*/artifacts/model" | sort | tail -n1)
+          echo "MODEL_DIR=$MODEL_DIR"
+          echo "model_dir=$MODEL_DIR" >> $GITHUB_OUTPUT
+
+      - name: Upload MLruns (artifacts)
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlruns_artifacts
+          path: MLProject/mlruns/**
+
+      - name: Generate Dockerfile from MLflow model
+        working-directory: MLProject
+        run: |
+          mlflow models generate-dockerfile -m "${{ steps.modelpath.outputs.model_dir }}" -n adult-income
+
+      - name: Docker login
+        if: ${{ steps.modelpath.outputs.model_dir != '' }}
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Build & Push Docker image
+        if: ${{ steps.modelpath.outputs.model_dir != '' }}
+        working-directory: MLProject
+        env:
+          IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/adult_income:latest
+        run: |
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      - name: Publish docker image tag
+        run: echo "Pushed image: ${{ secrets.DOCKERHUB_USERNAME }}/adult-income:latest"
