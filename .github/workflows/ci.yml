@@ -101,7 +101,6 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/adult_income:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/adult_income:${{ steps.fetchrun.outputs.run_id }}
 
-
       - name: Tag Docker image (run_id)
         if: ${{ steps.fetchrun.outputs.model_dir != '' }}
         env:
