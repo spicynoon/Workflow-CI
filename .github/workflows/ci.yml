@@ -19,9 +19,9 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install MLflow (CLI) & deps
+      - name: Install MLflow & deps
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install mlflow==2.19.0 numpy pandas scikit-learn joblib matplotlib
 
       - name: Run MLflow Project
@@ -29,29 +29,32 @@ jobs:
         run: |
           mlflow run . -e main
 
-      - name: Collect model artifact path
+      - name: Find model artifact path
         id: modelpath
         working-directory: MLProject
         shell: bash
         run: |
+          set -e
           MODEL_DIR=$(find mlruns -type d -path "*/artifacts/model" | sort | tail -n1)
           echo "MODEL_DIR=$MODEL_DIR"
-          echo "model_dir=$MODEL_DIR" >> $GITHUB_OUTPUT
+          echo "model_dir=$MODEL_DIR" >> "$GITHUB_OUTPUT"
 
-      - name: Upload MLruns (artifacts)
+      - name: Upload MLruns artifacts
         uses: actions/upload-artifact@v4
         with:
           name: mlruns_artifacts
           path: MLProject/mlruns/**
 
       - name: Generate Dockerfile from MLflow model
+        if: ${{ steps.modelpath.outputs.model_dir != '' }}
         working-directory: MLProject
         run: |
           mlflow models generate-dockerfile -m "${{ steps.modelpath.outputs.model_dir }}" -n adult-income
 
       - name: Docker login
         if: ${{ steps.modelpath.outputs.model_dir != '' }}
-        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+        run: |
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
       - name: Build & Push Docker image
         if: ${{ steps.modelpath.outputs.model_dir != '' }}
@@ -63,4 +66,6 @@ jobs:
           docker push "$IMAGE"
 
       - name: Publish docker image tag
-        run: echo "Pushed image: ${{ secrets.DOCKERHUB_USERNAME }}/adult-income:latest"
+        if: ${{ steps.modelpath.outputs.model_dir != '' }}
+        run: |
+          echo "Pushed image: ${{ secrets.DOCKERHUB_USERNAME }}/adult_income:latest"
