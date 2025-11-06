@@ -42,17 +42,23 @@ jobs:
         working-directory: MLProject
         shell: bash
         run: |
-          set -e
-          # ambil direktori run terbaru (yang punya meta.yaml)
-          RUN_DIR=$(find mlruns -type f -name "meta.yaml" -path "*/mlruns/*/*/meta.yaml" \
-                    | xargs -r dirname | sort | tail -n1)
+          set -euo pipefail
+          # Ambil direktori run terbaru berdasar mtime (format: mlruns/<exp_id>/<run_id>)
+          RUN_DIR=$(ls -td mlruns/*/* 2>/dev/null | head -n1 || true)
+          if [[ -z "${RUN_DIR}" ]]; then
+            echo "Tidak menemukan RUN_DIR di mlruns/*/*"; exit 1
+          fi
           RUN_ID=$(basename "$RUN_DIR")
           MODEL_DIR="$RUN_DIR/artifacts/model"
-          echo "RUN_DIR=$RUN_DIR"
-          echo "RUN_ID=$RUN_ID"
-          echo "MODEL_DIR=$MODEL_DIR"
-          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
-          echo "model_dir=$MODEL_DIR" >> "$GITHUB_OUTPUT"
+          if [[ ! -f "${MODEL_DIR}/MLmodel" ]]; then
+            echo "Model MLflow tidak ditemukan di ${MODEL_DIR}"; ls -R "$RUN_DIR"; exit 1
+          fi
+          echo "RUN_DIR=${RUN_DIR}"
+          echo "RUN_ID=${RUN_ID}"
+          echo "MODEL_DIR=${MODEL_DIR}"
+          echo "run_id=${RUN_ID}" >> "$GITHUB_OUTPUT"
+          echo "model_dir=${MODEL_DIR}" >> "$GITHUB_OUTPUT"
+
 
       - name: Upload MLruns artifacts to GitHub
         uses: actions/upload-artifact@v4
@@ -64,7 +70,8 @@ jobs:
         if: ${{ steps.fetchrun.outputs.model_dir != '' }}
         working-directory: MLProject
         run: |
-          mlflow models generate-dockerfile -m "${{ steps.fetchrun.outputs.model_dir }}" -n adult-income
+          mlflow models generate-dockerfile -m "${{ steps.fetchrun.outputs.model_dir }}"
+          test -f Dockerfile || { echo "Dockerfile tidak terbentuk"; exit 1; }
 
       - name: Docker login
         if: ${{ steps.fetchrun.outputs.model_dir != '' }}
