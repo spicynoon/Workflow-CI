@@ -1,0 +1,31 @@
+{
+  "n_train": 26029,
+  "n_val": 6508,
+  "n_test": 16276,
+  "num_cols": [
+    "age",
+    "education_num",
+    "capital_gain",
+    "capital_loss",
+    "hours_per_week"
+  ],
+  "cat_cols": [
+    "workclass",
+    "education",
+    "marital_status",
+    "occupation",
+    "relationship",
+    "race",
+    "sex",
+    "native_country"
+  ],
+  "rare_threshold": 0.01,
+  "drop_cols": [
+    "fnlwgt"
+  ],
+  "target_positive_train": 6271,
+  "target_rate_train": 0.24092358523185678,
+  "combined_path": "D:\\SMSML_Yandiyan\\Eksperimen_SML_Yandiyan\\preprocessing\\dataset_preprocessing\\adult_income_combined.csv",
+  "out_dir": "D:\\SMSML_Yandiyan\\Eksperimen_SML_Yandiyan\\preprocessing\\dataset_preprocessing",
+  "seed": 42
+}

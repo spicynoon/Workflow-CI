@@ -1,0 +1,18 @@
+{
+  "age": "numerical",
+  "workclass": "categorical",
+  "fnlwgt": "numerical",
+  "education": "categorical",
+  "education_num": "numerical",
+  "marital_status": "categorical",
+  "occupation": "categorical",
+  "relationship": "categorical",
+  "race": "categorical",
+  "sex": "categorical",
+  "capital_gain": "numerical",
+  "capital_loss": "numerical",
+  "hours_per_week": "numerical",
+  "native_country": "categorical",
+  "income": "target",
+  "split": "categorical"
+}

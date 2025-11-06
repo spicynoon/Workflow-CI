@@ -1,0 +1,28 @@
+{
+  "shape": [
+    48813,
+    16
+  ],
+  "target_distribution": {
+    "<=50K": 37128,
+    ">50K": 11685
+  },
+  "missing_by_column": {
+    "age": 0,
+    "workclass": 2799,
+    "fnlwgt": 0,
+    "education": 0,
+    "education_num": 0,
+    "marital_status": 0,
+    "occupation": 2809,
+    "relationship": 0,
+    "race": 0,
+    "sex": 0,
+    "capital_gain": 0,
+    "capital_loss": 0,
+    "hours_per_week": 0,
+    "native_country": 856,
+    "income": 0,
+    "split": 0
+  }
+}
