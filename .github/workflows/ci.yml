@@ -35,7 +35,7 @@ jobs:
       - name: Run MLflow Project
         working-directory: MLProject
         run: |
-          mlflow run . -e main
+          mlflow run . -e main --env-manager local
 
       - name: Get latest MLflow run_id & model path
         id: fetchrun
